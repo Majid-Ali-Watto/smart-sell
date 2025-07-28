@@ -5,15 +5,15 @@ import { NavigationContainer } from "@react-navigation/native";
 import BottomTabs from "./src/navigation/BottomTabs";
 import { initSalesTable } from "./src/services/storage/saleStorage";
 import { initUserTable } from "./src/services/storage/userStorage";
-import { initBackgroundTask } from "./src/tasks/backgroundTask";
+// import { initBackgroundTask } from "./src/tasks/backgroundTask";
 
 export default function App() {
   useEffect(() => {
     initSalesTable();
     initUserTable();
-    initBackgroundTask();
+    // initBackgroundTask();
   }, []);
-
+// Smart Sell – Simple Sales, Smarter Tracking.
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#087E8B" barStyle="light-content" />

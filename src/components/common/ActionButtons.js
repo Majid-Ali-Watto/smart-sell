@@ -1,16 +1,17 @@
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 
-export default function ActionButtons({ onView, onEdit, onDelete }) {
+export default function ActionButtons({children, onView, onEdit, onDelete, viewTitle='View',editTitle='Edit',deleteTitle='Delete' }) {
   return (
     <View style={styles.actions}>
+      {children}
       <TouchableOpacity style={styles.viewButton} onPress={onView}>
-        <Text style={styles.buttonText}>📄 View</Text>
+        <Text style={styles.buttonText}>📄 {viewTitle}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-        <Text style={styles.buttonText}>✏️ Edit</Text>
+        <Text style={styles.buttonText}>✏️ {editTitle}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
-        <Text style={styles.buttonText}>🗑️ Delete</Text>
+        <Text style={styles.buttonText}>🗑️ {deleteTitle}</Text>
       </TouchableOpacity>
     </View>
   );

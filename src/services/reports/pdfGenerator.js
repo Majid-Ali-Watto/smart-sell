@@ -44,7 +44,7 @@ export async function generatePDF(search, filteredSales, summary) {
           <span style="font-weight: bold; color: #087E8B;">
           Grand Total: Rs. ${(sale.total || 0).toLocaleString()}</span>
           <br/><span style="color: #28A745;">
-          Paid: Rs. ${(sale.paid || 0).toLocaleString()}
+          Paid: Rs. ${(sale.paid??sale.given ?? 0).toLocaleString()}
         </span>
         <span style="color: #DC3545;">
         <br/>Pending: Rs. ${(sale.pending || 0).toLocaleString()} 

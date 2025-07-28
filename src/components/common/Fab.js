@@ -18,12 +18,12 @@ export default function FloatingActionButton({
 
 const styles = StyleSheet.create({
   fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 15,
+    // position: "absolute",
+    // right: 20,
+    // bottom: 10,
     backgroundColor: "#007bff",
-    width: 56,
-    height: 56,
+    width: 36,
+    height: 36,
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
   fabText: {
     color: "#fff",
-    fontSize: 30,
+    fontSize: 20,
     lineHeight: 30,
     fontWeight: "bold",
   },

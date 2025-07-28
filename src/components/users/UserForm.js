@@ -10,15 +10,20 @@ import {
 } from "react-native";
 import { addUser, updateUser } from "../../services/storage/userStorage";
 import { useNavigation } from "@react-navigation/native";
+import ContactPickerModal from "../../components/common/ContactPickerModal"; // 👈 import
+
 export default function UserForm({ userToEdit }) {
   const [formData, setFormData] = useState({
     id: "",
     fullName: "",
     caste: "",
     mobile: "",
-    address: ""
+    address: "",
   });
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+
   const navigation = useNavigation();
+
   useEffect(() => {
     if (userToEdit) {
       setFormData(userToEdit);
@@ -28,10 +33,16 @@ export default function UserForm({ userToEdit }) {
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
+  const handleSelectContact = (contact) => {
+    setFormData((prev) => ({
+      ...prev,
+      fullName: contact.name,
+      mobile: contact.number,
+    }));
+  };
 
   const handleSubmit = async () => {
     const { fullName, mobile, address } = formData;
-
     if (!fullName || !mobile || !address) {
       Alert.alert("Validation Error", "Please fill all required fields.");
       return;
@@ -49,15 +60,7 @@ export default function UserForm({ userToEdit }) {
     }
 
     Alert.alert("Success", "User saved successfully.");
-
-    setFormData({
-      id: "",
-      fullName: "",
-      caste: "",
-      mobile: "",
-      address: ""
-    });
-
+    setFormData({ id: "", fullName: "", caste: "", mobile: "", address: "" });
     navigation.navigate("UserList");
   };
 
@@ -88,6 +91,14 @@ export default function UserForm({ userToEdit }) {
       {renderInput("Full Name", "fullName", "default", true)}
       {renderInput("Caste", "caste", "default")}
       {renderInput("Mobile Number", "mobile", "phone-pad", true)}
+
+      <TouchableOpacity
+        onPress={() => setContactModalVisible(true)}
+        style={styles.pickBtn}
+      >
+        <Text style={styles.pickBtnText}>📇 Pick from Contacts</Text>
+      </TouchableOpacity>
+
       {renderInput("Address", "address", "default", true)}
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
@@ -95,6 +106,12 @@ export default function UserForm({ userToEdit }) {
           {userToEdit ? "Update User" : "Add User"}
         </Text>
       </TouchableOpacity>
+
+      <ContactPickerModal
+        visible={contactModalVisible}
+        onClose={() => setContactModalVisible(false)}
+        onSelect={handleSelectContact}
+      />
     </ScrollView>
   );
 }
@@ -123,6 +140,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     fontSize: 16,
     color: "#000",
+  },
+  pickBtn: {
+    backgroundColor: "#28a745",
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 10,
+  },
+  pickBtnText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
   },
   submitButton: {
     marginTop: 20,

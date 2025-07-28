@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -13,11 +13,18 @@ export default function SearchableDropdown({
   value,
   setValue,
   options,
+  selectBoxPaddingVertical,
+  searchValue,
+  setSearchValue,
 }) {
-  const [search, setSearch] = useState("");
+  const [internalSearch, setInternalSearch] = useState("");
   const [open, setOpen] = useState(false);
 
-  const filtered = options.filter((item) =>
+  // Use external search value if provided
+  const search = searchValue ?? internalSearch;
+  const setSearch = setSearchValue ?? setInternalSearch;
+
+  const filtered = options?.filter((item) =>
     item.label?.toLowerCase()?.includes(search?.toLowerCase())
   );
 
@@ -29,14 +36,14 @@ export default function SearchableDropdown({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
-        style={styles.selectBox}
+        style={[styles.selectBox, { paddingVertical: selectBoxPaddingVertical }]}
         onPress={() => setOpen((prev) => !prev)}
       >
         <Text>
-          {options.find((o) => o.value === value)?.label || "Select..."}
+          {options.find((o) => o.value == value)?.label || "Select..."}
         </Text>
       </TouchableOpacity>
 
@@ -74,7 +81,6 @@ export default function SearchableDropdown({
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 15 },
   label: { marginBottom: 5, fontWeight: "bold" },
   selectBox: {
     borderWidth: 1,

@@ -7,32 +7,23 @@ import {
   Text,
   Alert,
 } from "react-native";
-import { loadUsers, deleteUser } from "../../services/storage/userStorage";
+import { deleteUser } from "../../services/storage/userStorage";
 import { useNavigation } from "@react-navigation/native";
 import Card from "../common/Card";
 import ActionButtons from "../common/ActionButtons";
+import { makeCall } from "../../services/whatsapp/makeACall";
+import { saveToContacts } from "../../services/utils/saveMobileNumber";
 
-export default function UsersList() {
+export default function UsersList({ usersFetched, sendSummary }) {
   const navigation = useNavigation();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      setUsers([]);
-      const data = await loadUsers();
-      setUsers((prev) => [...prev, ...data]);
-    };
+    setUsers(usersFetched || []);
+  }, [usersFetched]);
 
-    const unsubscribe = navigation.addListener("focus", fetchUsers);
-    return unsubscribe;
-  }, [navigation]);
-
-  const filteredUsers = users.filter(
-    (u) =>
-      u.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      u.caste?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = users;
 
   const handleDelete = async (id) => {
     Alert.alert("Delete", "Are you sure you want to delete this user?", [
@@ -57,12 +48,26 @@ export default function UsersList() {
 
   const renderUser = ({ item }) => (
     <Card style={styles.card}>
-      <Text style={styles.cardTitle}>{item.fullName}</Text>
-      <Text style={styles.cardSubtitle}>🧬 {item.caste}</Text>
+      <View style={[styles.infoRow, { justifyContent: "space-between" }]}>
+        <Text style={styles.cardTitle}>{item.fullName}</Text>
+        <Text style={styles.detailText}>Customer ID: {item.id}</Text>
+      </View>
 
-      <View style={styles.infoRow}>
-        <Text style={styles.icon}>📱</Text>
-        <Text style={styles.detailText}>{item.mobile}</Text>
+      <View style={[styles.infoRow, { justifyContent: "space-between" }]}>
+        <Text style={styles.cardSubtitle}>🧬 {item.caste}</Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.icon}>📱</Text>
+          <Text
+          onLongPress={() => saveToContacts(item.fullName?.trim()+' '+item?.caste, item.mobile)}
+            onPress={() => sendSummary(item?.mobile, item)}
+            style={[
+              styles.detailText,
+              { color: "blue", textDecorationLine: "underline" },
+            ]}
+          >
+            {item.mobile}
+          </Text>
+        </View>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.icon}>🏠</Text>
@@ -88,19 +93,29 @@ export default function UsersList() {
         onView={() => getDetails(item)}
         onEdit={() => startEdit(item)}
         onDelete={() => handleDelete(item.id)}
-      />
+        viewTitle="Sales"
+      >
+        <Text
+          style={{
+            color: "white",
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            borderRadius: 5,
+            fontWeight: "bold",
+            textAlign: "center",
+            borderColor: "gray",
+            borderWidth: 0.5,
+          }}
+          onPress={() => makeCall(item?.mobile)}
+        >
+          📞
+        </Text>
+      </ActionButtons>
     </Card>
   );
 
   return (
     <View style={styles.container}>
-      <TextInput
-        placeholder="Search by name or caste..."
-        value={search}
-        onChangeText={setSearch}
-        style={styles.input}
-        placeholderTextColor="#aaa"
-      />
       <FlatList
         data={filteredUsers}
         keyExtractor={(item) => item.id}

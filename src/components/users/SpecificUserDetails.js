@@ -21,7 +21,7 @@ export default function UserSalesDetails() {
         setLoading(true);
         setData([]);
         const result = await getSaleForSpecificUser(userId);
-        setData(result)
+        setData(result.data)
         setLoading(false);
       } catch (err) {
         setLoading(false);
@@ -31,11 +31,11 @@ export default function UserSalesDetails() {
     fetchData();
   }, [userId]);
 
-  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (loading) return <ActivityIndicator style={{ marginTop: 50 }} />;
 
   return (
     <View style={styles.container}>
-      <SaleListScreen specificUserSales={data}/>
+      <SaleListScreen userId={userId}/>
     </View>
   );
 }

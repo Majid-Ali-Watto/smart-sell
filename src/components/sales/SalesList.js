@@ -1,23 +1,18 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  Alert,
-} from "react-native";
+import { View, Text, FlatList, StyleSheet, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { deleteSale } from "../../services/storage/saleStorage";
 import ActionButtons from "../common/ActionButtons";
 import { downloadFile } from "../../services/reports/DownloadFile";
+import Checkbox from "../common/Checkbox";
 
-const SalesList = ({ salesFetched }) => {
+const SalesList = ({ salesFetched, setSelectedSales }) => {
   const navigation = useNavigation();
   const [sales, setSales] = useState([]);
-
   // Update sales when salesFetched prop changes
   useEffect(() => {
     setSales(salesFetched || []);
+
   }, [salesFetched]);
 
   const handleDelete = async (id) => {
@@ -51,8 +46,13 @@ const SalesList = ({ salesFetched }) => {
     navigation.navigate("SaleForm", { saleToEdit: item });
   };
 
-  const downloadSales = (item)=>  downloadFile(item.id, [item], null);
-
+  const downloadSales = (item) => downloadFile(item.id, [item], null);
+  const handleCheckboxChange = (newValue, selecteValue) => {
+    if(newValue){
+      setSelectedSales(prev=>[...prev, selecteValue])
+    }
+    else setSelectedSales(prev=>prev?.filter((f)=>f.id!==selecteValue.id))
+  };
   const renderSaleItem = ({ item }) => (
     <View style={styles.card}>
       {/* Customer Info */}
@@ -109,7 +109,15 @@ const SalesList = ({ salesFetched }) => {
         onView={() => downloadSales(item)}
         onEdit={() => handleEdit(item)}
         onDelete={() => handleDelete(item.id)}
-      />
+        viewTitle="Share"
+      >
+        <Checkbox
+          label=""
+          value={false}
+          selecteValue={item}
+          onChange={handleCheckboxChange}
+        />
+      </ActionButtons>
     </View>
   );
 

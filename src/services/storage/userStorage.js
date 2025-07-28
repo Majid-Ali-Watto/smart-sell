@@ -1,5 +1,5 @@
 import { db } from "../../config/db";
-
+const PAGE_SIZE = 10
 // Initialize the users table
 export const initUserTable = async () => {
   try {
@@ -18,9 +18,12 @@ export const initUserTable = async () => {
 };
 
 
-export const loadUsers = async () => {
+export const loadUsers = async (page = 1, pageSize = PAGE_SIZE) => {
   try {
-    const result = await db.getAllAsync(`
+    const offset = (page - 1) * pageSize;
+
+    // Fetch paginated users with summary
+    const users = await db.getAllAsync(`
       SELECT 
         u.id,
         u.fullName,
@@ -32,11 +35,27 @@ export const loadUsers = async () => {
         IFNULL(SUM(s.total - s.paid), 0) AS pending
       FROM users u
       LEFT JOIN sales s ON u.id = s.customer
-      GROUP BY u.id;
+      GROUP BY u.id
+      ORDER BY u.fullName
+      LIMIT ${pageSize}
+      OFFSET ${offset};
     `);
-    return result;
+
+    // Fetch total user count
+    const countResult = await db.getAllAsync(`
+      SELECT COUNT(*) AS count FROM users;
+    `);
+
+    const total = countResult[0]?.count || 0;
+
+    return {
+      data: users,
+      total,
+      page,
+      pageSize,
+    };
   } catch (error) {
-    console.error("Failed to load users:", error);
+    console.error("Failed to load users with pagination:", error);
     throw error;
   }
 };
@@ -104,31 +123,111 @@ export const deleteUser = async (id) => {
   }
 };
 
-export const userWithAllSales = async (userId) => {
+export const userWithAllSales = async (
+  query = "",
+  page = 1,
+  pageSize = PAGE_SIZE,
+) => {
   try {
-    const result = await db.getAllAsync(
+    const offset = (page - 1) * pageSize;
+    const search = `%${query}%`;
+
+    const whereClause = query
+      ? `
+        WHERE 
+          users.id LIKE ? OR 
+          users.fullName LIKE ? OR 
+          users.caste LIKE ? OR 
+          users.mobile LIKE ? OR 
+          users.address LIKE ?
+      `
+      : "";
+
+    const params = query ? [search, search, search, search, search] : [];
+
+    // Step 1: Get user & sale summary
+    const users = await db.getAllAsync(
       `
       SELECT 
-        users.id AS userId,
+        users.id,
         users.fullName,
+        users.caste,
         users.mobile,
         users.address,
-        sales.id AS saleId,
-        sales.product,
-        sales.quantity,
-        sales.price,
-        sales.total AS saleTotal,
-        sales.paid,
-        sales.date
+        IFNULL(SUM(s.total), 0) AS total,
+        IFNULL(SUM(s.paid), 0) AS given,
+        IFNULL(SUM(s.total - s.paid), 0) AS pending
       FROM users
-      LEFT JOIN sales ON users.id = sales.customer
-      WHERE users.id = ?;
+      LEFT JOIN sales s ON users.id = s.customer
+      ${whereClause}
+      GROUP BY users.id
+      ORDER BY users.fullName
+      LIMIT ${pageSize}
+      OFFSET ${offset};
       `,
-      [userId]
+      params
     );
-    return result;
+
+    const countResult = await db.getAllAsync(
+      `
+      SELECT COUNT(DISTINCT users.id) AS count
+      FROM users
+      LEFT JOIN sales s ON users.id = s.customer
+      ${whereClause};
+      `,
+      params
+    );
+
+    const total = countResult[0]?.count || 0;
+
+    return {
+      data: users,
+      total,
+      page,
+      pageSize,
+    };
   } catch (error) {
     console.error("Failed to get users with all sales:", error);
+    throw error;
+  }
+};
+export const getUserForSaleForm = async (query = "") => {
+  try {
+    const search = `%${query}%`;
+
+    const whereClause = query
+      ? `
+        WHERE 
+          users.id LIKE ? OR 
+          users.fullName LIKE ? OR 
+          users.caste LIKE ? OR 
+          users.mobile LIKE ? OR 
+          users.address LIKE ?
+      `
+      : "";
+
+    const params = query ? [search, search, search, search, search] : [];
+
+    // ✅ Step 1: Get users
+    const users = await db.getAllAsync(
+      `
+      SELECT 
+        users.id,
+        users.fullName,
+        users.caste,
+        users.mobile,
+        users.address
+      FROM users
+      ${whereClause}
+      `,
+      params
+    );
+
+    return {
+      data: users,
+    };
+  } catch (error) {
+    console.error("Failed to get users for sale form:", error);
     throw error;
   }
 };

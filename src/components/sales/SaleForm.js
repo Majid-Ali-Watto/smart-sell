@@ -11,10 +11,11 @@ import {
   ScrollView,
 } from "react-native";
 import { saveSale } from "../../services/storage/saleStorage";
-import { loadUsers } from "../../services/storage/userStorage";
+import { getUserForSaleForm } from "../../services/storage/userStorage";
 import Dropdown from "../common/Dropdown";
 import DateTimePicker from "../common/DatePicker";
 import { useNavigation } from "@react-navigation/native";
+import { useDebounce } from "../../hooks/useDebounce";
 
 export default function SaleForm({ saleToEdit }) {
   const navigation = useNavigation();
@@ -26,6 +27,7 @@ export default function SaleForm({ saleToEdit }) {
     total: "",
   });
 
+  const [search, setSearch] = useState("Watto");
   const [productList, setProductList] = useState([]);
   const [productsTotal, setProductsTotal] = useState(0);
   const [productEntryUpdate, setProductEntryUpdate] = useState(false);
@@ -38,18 +40,34 @@ export default function SaleForm({ saleToEdit }) {
   });
 
   const [users, setUsers] = useState([]);
-
+  const debouncedSearch = useDebounce(search, 400); // Debounce for 400ms
   // Load users
   useEffect(() => {
+    let isCancelled = false;
+
     (async () => {
-      const data = await loadUsers();
-      const names = data.map((user) => ({
-        label: user.fullName + "/" + user.caste + "/" + user.address,
-        value: user.id,
-      }));
-      setUsers(names);
+      try {
+        const data = await getUserForSaleForm(debouncedSearch);
+
+        if (!isCancelled && data?.data?.length) {
+          const names = data.data.map((user) => ({
+            label: `${user.fullName} / ${user.caste} / ${user.address}`,
+            value: user.id,
+          }));
+          setUsers(names);
+        } else if (!isCancelled) {
+          setUsers([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        if (!isCancelled) setUsers([]);
+      }
     })();
-  }, []);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedSearch]);
 
   // Pre-fill if editing
   useEffect(() => {
@@ -229,7 +247,9 @@ export default function SaleForm({ saleToEdit }) {
 
         {productList.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Products Added of Total Rs. {productsTotal}</Text>
+            <Text style={styles.sectionTitle}>
+              Products Added of Total Rs. {productsTotal}
+            </Text>
             {productList.map((item, index) => (
               <View key={index} style={styles.productRow}>
                 <Text style={{ flex: 1 }}>
@@ -255,6 +275,8 @@ export default function SaleForm({ saleToEdit }) {
             value={form.customer}
             setValue={(val) => handleChange("customer", val)}
             options={users}
+            searchValue={search}
+            setSearchValue={setSearch}
           />
         </View>
 
@@ -268,9 +290,7 @@ export default function SaleForm({ saleToEdit }) {
           />
         </View>
 
-      
-
-         <TouchableOpacity style={styles.buttonOutline} onPress={handleSave}>
+        <TouchableOpacity style={styles.buttonOutline} onPress={handleSave}>
           <Text style={styles.buttonText}>
             {saleToEdit ? "Update Sale" : "Save Sale"}
           </Text>
